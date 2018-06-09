@@ -19,6 +19,7 @@
   "homepage": "https://github.com/bnsnchz/Liri#readme",
   "dependencies": {
     "dotenv": "^6.0.0",
+    "express-generator": "^4.16.0",
     "node-spotify-api": "^1.0.7",
     "request": "^2.87.0",
     "require": "^2.4.20",
