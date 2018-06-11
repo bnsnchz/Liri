@@ -7,6 +7,7 @@ var Twitter = require("twitter");
 var Spotify = require("node-spotify-api");
 var spotify = new Spotify(keys.spotify);
 var client = new Twitter(keys.twitter);
+var choice;
 // var movieUrl = "http:/www.omdbapi.com/?t=" + input + "&y=&plot=short&apikey=trilogy";
 
 inquirer.prompt([
@@ -27,8 +28,8 @@ if (command === "Get my tweets"){
             message:"What is your username?",
             name:"username",
         }
-    ]).then(function(tweet){
-        var param = {screen_name: tweet.name, 
+    ]).then(function(answer){
+        var param = {screen_name: answer.name,
                     count:20,
                     trim_user:true,
                     include_entities:false,
@@ -58,7 +59,24 @@ if (command === "Look up a song"){
             name:"songName",
         }]).then(function(answer){
             choice = answer.songName;
-        spotify.search({type:"track",query: choice},function(err,data){
+            if(answer.songName === ""){
+                choice = "The Sign";
+                spotify.search({type:"track",query: choice},function(err,data){
+                    var searchInfo = data.tracks.items[7];
+                    var searchArtists = searchInfo.artists[7];
+                    var searchAlbum = searchInfo.album;
+                    var searchUrl = searchInfo.external_urls.spotify;
+        
+                    if(!err){
+                        console.log("Artist: "+searchArtists.name);
+                        console.log("Song: "+searchInfo.name);
+                        console.log("Album: "+searchAlbum.name);
+                        console.log("Preview here: "+searchUrl);
+                    }
+                })
+            }
+            else{
+            spotify.search({type:"track",query: choice},function(err,data){
             var searchInfo = data.tracks.items[0];
             var searchArtists = searchInfo.artists[0];
             var searchAlbum = searchInfo.album;
@@ -71,8 +89,9 @@ if (command === "Look up a song"){
                 console.log("Preview here: "+searchUrl);
             }
         });
-    });
+    }
 
+    });
 }
 
 
