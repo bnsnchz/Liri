@@ -1,6 +1,7 @@
 require("dotenv").config();
 
 var keys = require("./keys.js");
+var fs = require("fs");
 var inquirer = require("inquirer");
 var request = require("request");
 var Twitter = require("twitter");
@@ -8,14 +9,52 @@ var Spotify = require("node-spotify-api");
 var spotify = new Spotify(keys.spotify);
 var client = new Twitter(keys.twitter);
 var choice;
-// var movieUrl = "http:/www.omdbapi.com/?t=" + input + "&y=&plot=short&apikey=trilogy";
+function searchSong(answer){
+    choice = answer.songName;
+    if(answer.songName === ""){
+        choice = "The Sign";
+        spotify.search({type:"track",query: "The Sign"},function(err,data){
+            var searchInfo = data.tracks.items[7];
+            var searchArtists = searchInfo.artists[0];
+            var searchAlbum = searchInfo.album;
+            var searchUrl = searchInfo.external_urls.spotify;
+            if(!err){
+                console.log("You didn't pick a song so I picked one for you...")
+                console.log("Artist: "+searchArtists.name);
+                console.log("Song: "+searchInfo.name);
+                console.log("Album: "+searchAlbum.name);
+                console.log("Preview here: "+searchUrl);
+                liri();
+            }
+            // console.log(searchArtists);
+        })
+    }
+    else{
+    spotify.search({type:"track",query: choice},function(err,data){
+    var searchInfo = data.tracks.items[0];
+    var searchArtists = searchInfo.artists[0];
+    var searchAlbum = searchInfo.album;
+    var searchUrl = searchInfo.external_urls.spotify;
 
+    if(!err){
+        console.log("Artist: "+searchArtists.name);
+        console.log("Song: "+searchInfo.name);
+        console.log("Album: "+searchAlbum.name);
+        console.log("Preview here: "+searchUrl);
+        liri();
+    }
+});
+}
+
+}
+
+function liri(){
 inquirer.prompt([
     {
         type:"list",
         name:"menu",
         message:"What can I help you with?",
-        choices:["Get my tweets","Look up a song","Look up a movie","You pick for me"]
+        choices:["Get my tweets","Look up a song","Look up a movie","Do what it says","Exit"]
     }
 ]).then(function(answer){
 
@@ -29,7 +68,7 @@ if (command === "Get my tweets"){
             name:"username",
         }
     ]).then(function(answer){
-        var param = {screen_name: answer.name,
+        var param = {screen_name: answer.username,
                     count:20,
                     trim_user:true,
                     include_entities:false,
@@ -44,10 +83,13 @@ if (command === "Get my tweets"){
                 console.log("Tweet: "+ tweetText);
                 console.log("Date: "+ tweetCreated);
                 console.log("----------------------------------");
+   
             }
+            liri();
         }
         });
     });
+
 }
 
 
@@ -58,40 +100,9 @@ if (command === "Look up a song"){
             message:"What song are you looking for?",
             name:"songName",
         }]).then(function(answer){
-            choice = answer.songName;
-            if(answer.songName === ""){
-                choice = "The Sign";
-                spotify.search({type:"track",query: choice},function(err,data){
-                    var searchInfo = data.tracks.items[7];
-                    var searchArtists = searchInfo.artists[7];
-                    var searchAlbum = searchInfo.album;
-                    var searchUrl = searchInfo.external_urls.spotify;
-        
-                    if(!err){
-                        console.log("Artist: "+searchArtists.name);
-                        console.log("Song: "+searchInfo.name);
-                        console.log("Album: "+searchAlbum.name);
-                        console.log("Preview here: "+searchUrl);
-                    }
-                })
-            }
-            else{
-            spotify.search({type:"track",query: choice},function(err,data){
-            var searchInfo = data.tracks.items[0];
-            var searchArtists = searchInfo.artists[0];
-            var searchAlbum = searchInfo.album;
-            var searchUrl = searchInfo.external_urls.spotify;
-
-            if(!err){
-                console.log("Artist: "+searchArtists.name);
-                console.log("Song: "+searchInfo.name);
-                console.log("Album: "+searchAlbum.name);
-                console.log("Preview here: "+searchUrl);
-            }
+            searchSong(answer);
         });
-    }
 
-    });
 }
 
 
@@ -114,6 +125,7 @@ if (command === "Look up a movie"){
                     console.log("Language: " + JSON.parse(body).Language);
                     console.log("Plot: " + JSON.parse(body).Plot);
                     console.log("Actors: " + JSON.parse(body).Actors);
+                    liri();
 
                 }
               });
@@ -123,13 +135,25 @@ if (command === "Look up a movie"){
     }
 
 
-if (command === "do-what-it-says"){
+if (command === "Do what it says"){
+    fs.readFile("random.txt", "utf-8", function(err, data){
+        var output = data.split(",");
+        var answer ={}
+        answer.songName = output[1];
+        
+        searchSong(answer);
 
+    });
+}
+if (command === "Exit"){
+    return;
 }
 
 })
 
+}
 
+liri();
 
 
 
